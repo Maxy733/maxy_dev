@@ -1,0 +1,186 @@
+{
+  "slug": "food-delivery-platform-trust",
+  "title": "A Quantitative Analysis of Factors Influencing User Trust in Food Delivery Platforms",
+  "category": "Research paper",
+  "description": "A survey of 252 respondents in Thailand examines which factors are associated with trust in food delivery platforms and the intention to use them again.",
+  "authors": [
+    "Kyi Sin Thant",
+    "Kyaw Tay Za",
+    "Phonvan Deelertpattana"
+  ],
+  "affiliation": "Assumption University, Thailand",
+  "abstract": "This study examined trust and reuse intention in Thailand’s food delivery platforms using an online survey of 252 respondents, mostly students and alumni of Assumption University. Platform reputation and payment security were positively associated with user trust, with reputation showing the strongest association among the five factors tested. User trust and perceived service quality were both positively associated with reuse intention. Service quality, information quality, and delivery reliability did not have statistically significant associations with trust in the reported analysis.",
+  "keywords": [
+    "Online Food Delivery Service",
+    "User Trust",
+    "Service Quality",
+    "Payment Security",
+    "Platform Reputation",
+    "Reuse Intention",
+    "Thailand"
+  ],
+  "pdfPath": "/articles/food-delivery-platform-trust/food-delivery-platform-trust.pdf",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "Introduction",
+      "paragraphs": [
+        "Food delivery apps let customers compare restaurants, order, pay, and track deliveries in one place. Their widespread use in Thailand accelerated during the COVID-19 pandemic as demand grew for convenient and contactless ordering.",
+        "Trust matters when customers order without seeing the food or dealing directly with the restaurant. This study examines whether service quality, information quality, payment security, delivery reliability, and platform reputation are associated with trust. It also tests how trust and perceived service quality relate to the intention to use the platform again."
+      ]
+    },
+    {
+      "id": "literature-review",
+      "title": "Literature Review",
+      "subsections": [
+        {
+          "title": "Service Quality",
+          "paragraphs": [
+            "Service quality describes how customers rate the overall delivery experience, including reliability, food quality, payment security, app performance, and customer support (Wu et al., 2024).",
+            "Wu et al. (2024) linked dimensions such as reliability, assurance, traceability, and perceived value to customer satisfaction and, in turn, to reuse intention. Lin et al. (2024) linked app service quality to app use, satisfaction with the food, and repurchase intention."
+          ]
+        },
+        {
+          "title": "Information Quality",
+          "paragraphs": [
+            "Information quality covers how accurate, complete, relevant, and up to date the app’s menus, prices, restaurant details, photos, reviews, and order updates are (Wang et al., 2021).",
+            "Wang et al. (2021) linked better information to greater trust. Mai and Nguyen (2025) suggested that accurate details help customers decide what to order with less uncertainty."
+          ]
+        },
+        {
+          "title": "Payment Security",
+          "paragraphs": [
+            "Perceived payment security is the confidence customers have that the platform protects their payment and financial information from fraud or unauthorized access.",
+            "Muangmee et al. (2021) linked perceived safety and trust to customers’ intention to use food delivery apps. Dsouza and Bhat (2022) identified secure payments as a factor in customer trust."
+          ]
+        },
+        {
+          "title": "Delivery Reliability",
+          "paragraphs": [
+            "Delivery reliability means getting the right order on time and in good condition. Consistent delivery can reduce uncertainty for customers.",
+            "Wu et al. (2024) linked delivery reliability to satisfaction and reuse intention. Jun et al. (2022) noted that customers consider reliability when deciding whether to keep using a food delivery app."
+          ]
+        },
+        {
+          "title": "Platform Reputation",
+          "paragraphs": [
+            "Customers form an impression of a platform’s reputation through past experiences, its public image, reviews, and recommendations. Mai and Nguyen (2025) linked vendor reputation and platform trust to purchase and reuse intentions. Chotigo and Kadono (2021) identified trust as a factor in customer satisfaction and continued use of food delivery apps in Thailand."
+          ]
+        },
+        {
+          "title": "User Trust",
+          "paragraphs": [
+            "User trust reflects customers’ confidence that the platform will protect their personal data and deliver the service it promises. Trust can reduce uncertainty when customers order online (Mai & Nguyen, 2025).",
+            "Wen et al. (2022) linked trust to the intention to keep using food delivery apps. Ratasuk and Gajesanand (2023) examined how trust relates to food safety and repurchase intention."
+          ]
+        },
+        {
+          "title": "Reuse Intention",
+          "paragraphs": [
+            "Reuse intention describes a customer’s willingness to continue using a platform. Earlier research linked trust, satisfaction, and service quality to continued use and customer loyalty in food delivery (Wu et al., 2024; Rombach et al., 2023)."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "research-objectives",
+      "title": "Research Objectives",
+      "paragraphs": [
+        "The study assessed how perceived service quality, information quality, payment security, delivery reliability, and platform reputation relate to user trust in Thailand. It also examined whether users who reported greater trust or higher service quality were more inclined to use the same platform again."
+      ]
+    },
+    {
+      "id": "research-questions",
+      "title": "Research Questions",
+      "questions": [
+        "Which factors are associated with user trust in food delivery platforms in Thailand?",
+        "How does perceived service quality relate to user trust?",
+        "How does information quality relate to user trust?",
+        "How does perceived payment security relate to user trust?",
+        "How does delivery reliability, including timeliness and order accuracy, relate to user trust?",
+        "How does platform reputation relate to user trust?",
+        "How do user trust and perceived service quality relate to reuse intention?"
+      ]
+    },
+    {
+      "id": "hypotheses",
+      "title": "Hypotheses and Research Model",
+      "paragraphs": [
+        "The authors tested seven hypotheses. Five predicted positive associations with user trust, and two predicted positive associations with reuse intention."
+      ],
+      "subsections": [
+        {
+          "title": "Predictors of User Trust",
+          "paragraphs": [
+            "H1. Perceived service quality. H2. Information quality. H3. Payment security. H4. Delivery reliability. H5. Platform reputation."
+          ]
+        },
+        {
+          "title": "Predictors of Reuse Intention",
+          "paragraphs": [
+            "H6. User trust. H7. Perceived service quality."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "research-design",
+      "title": "Research Design",
+      "paragraphs": [
+        "The team collected 252 responses through a structured online questionnaire distributed to food delivery platform users. The sample came primarily from Assumption University students and alumni. Students accounted for 74.2% of respondents, and 99.2% reported using food delivery within the previous six months.",
+        "The survey measured seven constructs using four or five items each on a five-point scale. The team used descriptive statistics, Cronbach’s alpha, Pearson correlations, and regression analysis to evaluate the survey responses and test the hypotheses."
+      ]
+    },
+    {
+      "id": "findings",
+      "title": "Findings",
+      "paragraphs": [
+        "Item means ranged from 3.89 to 4.21 out of 5. Cronbach’s alpha ranged from 0.887 to 0.917 across the seven constructs. Platform reputation and user trust had the strongest pairwise correlation (r = 0.893)."
+      ],
+      "subsections": [
+        {
+          "title": "Platform Reputation and Payment Security",
+          "paragraphs": [
+            "Platform reputation had the strongest reported association with user trust (H5, β = 0.592, p < 0.001). Payment security also showed a positive association (H3, β = 0.095, p = 0.044). The reported paths from service quality (H1, β = 0.046, p = 0.443), information quality (H2, β = 0.119, p = 0.066), and delivery reliability (H4, β = 0.104, p = 0.120) were statistically nonsignificant."
+          ]
+        },
+        {
+          "title": "User Trust and Service Quality",
+          "paragraphs": [
+            "User trust (H6, β = 0.856, p < 0.001) and perceived service quality (H7, β = 0.779, p < 0.001) were both positively associated with reuse intention."
+          ]
+        }
+      ],
+      "figures": [
+        {
+          "src": "/articles/food-delivery-platform-trust/research-model.webp",
+          "width": 1600,
+          "height": 872,
+          "alt": "The results model shows significant links from platform reputation and payment security to user trust, and from user trust and service quality to reuse intention. The other three paths to trust are dashed.",
+          "caption": "Reported coefficients for the seven tested paths, reproduced from Figure 7.5 of the term paper. Dashed arrows indicate statistically nonsignificant results."
+        }
+      ]
+    },
+    {
+      "id": "discussion",
+      "title": "Discussion",
+      "paragraphs": [
+        "The results point to different factors in building trust and encouraging reuse. Reputation and perceived payment security were associated with trust. Perceived service quality had a significant association with reuse intention. Its association with trust was statistically nonsignificant."
+      ]
+    },
+    {
+      "id": "limitations",
+      "title": "Limitations",
+      "paragraphs": [
+        "The study relied on self-reported responses from a sample concentrated in one university community. It measured intentions to use the platforms again. A broader sample and follow-up studies could help assess whether the same relationships hold for other users and for actual repeat orders."
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "paragraphs": [
+        "The study supported four of the seven hypotheses. Platform reputation had the strongest association with user trust, and perceived payment security also mattered. Users who reported greater trust or better service quality were more likely to say they would use the platform again. For food delivery providers, these findings suggest pairing visible payment protections and a credible reputation with a service experience customers want to repeat."
+      ]
+    }
+  ]
+}

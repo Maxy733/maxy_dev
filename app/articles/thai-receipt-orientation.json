@@ -1,0 +1,65 @@
+{
+  "slug": "thai-receipt-orientation",
+  "title": "Classifying Thai Receipt Orientation with EfficientNetV2-M",
+  "category": "Computer vision",
+  "description": "A four-class orientation model correctly classified 179 of 180 validation images after the original receipts were split before rotation.",
+  "authors": ["Kyaw Tay Za"],
+  "affiliation": "Portfolio write-up",
+  "pdfPath": "/articles/thai-receipt-orientation/thai-receipt-orientation.pdf",
+  "abstract": "This project uses EfficientNetV2-M with ImageNet weights to classify Thai receipt photos in four clockwise orientations. The 227 original receipts were split before rotation, so each receipt stayed in either training or validation. The model got 179 of 180 validation images right (99.44%) across 45 held-out receipts. Its only mix-up was calling a 270° image 90°. The TorchScript export reloaded successfully and returned four scores for a single image.",
+  "keywords": [
+    "document orientation",
+    "Thai receipts",
+    "EfficientNetV2-M",
+    "transfer learning",
+    "TorchScript"
+  ],
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "Introduction",
+      "paragraphs": [
+        "A sideways receipt has all the same information as an upright one, but the angle can throw off text recognition. The model figures out which way a Thai receipt is turned so it can be straightened before the text is read.",
+        "The labels mark clockwise rotations of 0°, 90°, 180°, and 270°. A quick visual check before training made sure the angles matched their labels."
+      ]
+    },
+    {
+      "id": "dataset",
+      "title": "Split the Receipts Before Rotating Them",
+      "paragraphs": [
+        "The split came first. Of the 227 original receipts, 182 went into training and 45 went into validation. Rotating each group separately kept the same receipt from showing up in both sets at different angles.",
+        "That gave the validation set 180 images, with 45 for each angle. A spot check of the augmented training images confirmed that preprocessing kept the orientation labels accurate."
+      ]
+    },
+    {
+      "id": "methods",
+      "title": "Train the Classifier in Two Stages",
+      "paragraphs": [
+        "Training started with EfficientNetV2-M and its ImageNet weights. The first stage trained a new classifier head with four outputs. The second fine-tuned the final feature blocks using automatic mixed precision on a Tesla T4 in Google Colab.",
+        "The model took 480 × 480 images. The batch size went from four to eight, and two workers loaded images for the GPU. The best checkpoint came at epoch 29 overall. Fine-tuning stopped at its 34th epoch after 15 epochs without improvement."
+      ]
+    },
+    {
+      "id": "results",
+      "title": "What the Validation Run Showed",
+      "paragraphs": [
+        "The model got 179 of 180 validation images right, for 99.44% accuracy. It correctly classified all 45 images in each of the 0°, 90°, and 180° classes. The only miss was a 270° receipt that it called 90°.",
+        "The model hadn’t seen any of these receipts during training. The 180 predictions came from 45 receipts, each tested in all four orientations."
+      ]
+    },
+    {
+      "id": "export",
+      "title": "Export and Reload the Model",
+      "paragraphs": [
+        "After saving the training checkpoint, I exported the model to TorchScript. The file came in at 204.8 MB. A quick test after reloading it returned the expected 1 × 4 output, with one score for each of the four orientations."
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "paragraphs": [
+        "Splitting before rotation gave the model a fair test on unseen receipts from this collection. Two questions are still open. How well does it handle receipts from other sources, and does straightening them help with text recognition?"
+      ]
+    }
+  ]
+}

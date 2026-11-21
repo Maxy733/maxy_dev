@@ -1,0 +1,184 @@
+{
+  "slug": "hospital-resource-forecasting",
+  "title": "Integrating Computer Vision and Machine Learning for Real-Time Hospital Resource Allocation and Forecasting",
+  "category": "Applied AI proposal",
+  "description": "A proposal to combine live occupancy counts with short-term forecasts so Thai hospitals can plan staffing, track triage beds, and respond to patient surges.",
+  "authors": ["Kyaw Tay Za"],
+  "affiliation": "Assumption University of Thailand",
+  "abstract": "Emergency departments and outpatient clinics need to adjust staffing and bed availability as patient demand changes. This course project proposes combining computer vision with machine learning to give hospital operations teams a current view of occupancy and forecast demand one and four hours ahead. The design uses counts from existing cameras alongside historical arrivals, staff schedules, and calendar and weather data. A phased rollout ends with a single-department pilot that would evaluate forecast accuracy, time from check-in to triage, and delays in reporting vacant beds.",
+  "keywords": [
+    "computer vision",
+    "patient-flow forecasting",
+    "hospital resource allocation",
+    "emergency department operations",
+    "machine learning"
+  ],
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "Introduction",
+      "paragraphs": [
+        "Unpredictable patient arrivals make it difficult to match staffing and bed capacity to demand in emergency departments and outpatient settings. Historical averages can help set a schedule, but they give operations teams limited information when demand changes during a shift.",
+        "This project proposes a system that combines current occupancy counts with short-term demand forecasts. The goal is to help staff see which resources are available and give operations managers time to prepare for a surge."
+      ]
+    },
+    {
+      "id": "business-background",
+      "title": "Business Background",
+      "paragraphs": [
+        "The proposed setting is a large public or private hospital network in Thailand. For hospitals that receive many walk-in patients, the emergency department is particularly difficult to plan around because arrivals can vary substantially within the same day.",
+        "Administrators and department managers typically work with daily staffing schedules, electronic health records (EHRs), and appointment logs. The proposed dashboard is intended for those managers, triage nurses, and operations teams."
+      ]
+    },
+    {
+      "id": "business-problem",
+      "title": "Business Problem Analysis",
+      "subsections": [
+        {
+          "title": "Static schedules and disconnected systems",
+          "paragraphs": [
+            "Historical volumes and appointment logs leave gaps when walk-in arrivals spike. Separate systems for health records, scheduling, and billing also make it difficult to build a current view of demand and capacity."
+          ]
+        },
+        {
+          "title": "Manual bed updates",
+          "paragraphs": [
+            "After a triage bed becomes vacant, staff must update its status manually. A delay can leave the bed listed as occupied even when it is ready to be reassigned."
+          ]
+        },
+        {
+          "title": "Operational costs",
+          "paragraphs": [
+            "Overstaffing during quiet periods raises labor costs, while understaffing during surges can require premium overtime. Long queues can contribute to ambulance diversions and increase the number of patients who leave without being seen."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "objectives",
+      "title": "Project Objectives and Success Measures",
+      "paragraphs": [
+        "The report proposes three targets for a hospital pilot, measured against current operations."
+      ],
+      "subsections": [
+        {
+          "title": "Forecast accuracy",
+          "paragraphs": ["Aim for at least 85% accuracy when forecasting patient volume and resource demand one and four hours ahead."]
+        },
+        {
+          "title": "Patient wait time",
+          "paragraphs": ["Reduce average time from initial check-in to triage by at least 15%."]
+        },
+        {
+          "title": "Bed reporting speed",
+          "paragraphs": ["Cut the delay in reporting a vacant triage bed by 20%."]
+        }
+      ]
+    },
+    {
+      "id": "feasibility",
+      "title": "Feasibility Study",
+      "paragraphs": [
+        "The proposed stack uses YOLOv8 for object detection, Python and FastAPI to serve forecasts, PostgreSQL for data storage, and Next.js for the operations dashboard. The design would use existing cameras in waiting rooms and triage areas, avoiding the cost of installing new sensors or asking patients to wear devices.",
+        "The vision system would produce occupancy counts and bed states. The proposal excludes facial recognition and biometric identifiers and includes a web application firewall for the analytics API. Review of camera access, video handling, and hospital privacy requirements would be part of the pilot setup.",
+        "The business case assumes that earlier staffing decisions could reduce overtime and that faster vacancy reporting could improve bed utilization. A pilot would establish whether those savings justify the development and cloud costs."
+      ]
+    },
+    {
+      "id": "proposed-ai-solution",
+      "title": "Proposed AI Solution",
+      "subsections": [
+        {
+          "title": "Current occupancy",
+          "paragraphs": [
+            "YOLOv8 would analyze existing camera feeds to estimate the number of people in waiting areas and track whether triage beds are occupied. The dashboard would use those measurements to present a current view of demand and capacity."
+          ]
+        },
+        {
+          "title": "Short-term demand forecasting",
+          "paragraphs": [
+            "The forecasting engine would combine occupancy measurements with historical EHR activity, staff schedules, time of day, weather, and holidays. It would use time-series models alongside random forests and k-nearest neighbors (KNN) to account for recurring patterns and short-term changes."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "development-process",
+      "title": "Data and AI Development Process",
+      "paragraphs": [
+        "The proposed pipeline would retrieve structured operational data through secure APIs and turn camera feeds into a time series of occupancy counts. Moving averages would fill brief gaps caused by camera downtime.",
+        "Candidate input variables include the hour, day of the week, historical surge ratios, and changes in waiting-room density. Time-series models would capture seasonal patterns, while random forests and KNN would account for variation in the live measurements.",
+        "The evaluation plan uses root mean squared error (RMSE) to compare forecast errors and flag models for retuning when errors exceed an agreed threshold. FastAPI would expose forecasts to a Next.js dashboard with live charts and capacity alerts."
+      ]
+    },
+    {
+      "id": "process-improvement",
+      "title": "Business Process Improvement",
+      "subsections": [
+        {
+          "title": "Demand forecasting",
+          "paragraphs": ["Replace static historical averages in shift planning with updated forecasts of patient volume one and four hours ahead."]
+        },
+        {
+          "title": "Bed availability tracking",
+          "paragraphs": ["Use detected vacancy events to update the dashboard promptly, reducing the delay from manual status entry."]
+        },
+        {
+          "title": "Staff allocation",
+          "paragraphs": ["Alert managers to forecasted peaks so they can review staffing before demand exceeds scheduled capacity."]
+        },
+        {
+          "title": "Decision support",
+          "paragraphs": ["Bring current occupancy, forecasts, and alerts into one dashboard for operations teams."]
+        }
+      ]
+    },
+    {
+      "id": "implementation-plan",
+      "title": "Implementation Plan",
+      "paragraphs": ["The report proposes a 12-month rollout in four phases."],
+      "subsections": [
+        {
+          "title": "Setup and integration (months 1–3)",
+          "paragraphs": ["Connect approved hospital data sources, provision the proposed cloud environment, and assess application and infrastructure security."]
+        },
+        {
+          "title": "AI development (months 4–6)",
+          "paragraphs": ["Connect approved camera feeds, train the models for crowd counting and bed occupancy, and establish the forecast validation process."]
+        },
+        {
+          "title": "Dashboard and user experience (months 7–9)",
+          "paragraphs": ["Build the dashboard and alerts, and test how the API handles load before the pilot."]
+        },
+        {
+          "title": "Pilot and deployment (months 10–12)",
+          "paragraphs": ["Pilot the system in one high-traffic emergency department. Train triage nurses and managers, then review forecast accuracy, wait times, and vacancy-reporting speed before considering wider rollout."]
+        }
+      ]
+    },
+    {
+      "id": "business-benefits",
+      "title": "Business Benefits and Value",
+      "paragraphs": [
+        "Earlier staffing decisions could reduce reliance on overtime, while faster bed updates could help staff make better use of available capacity. A shared dashboard could also reduce the time staff spend confirming bed status and reconciling information across systems.",
+        "Shorter queues could mean fewer patients leaving before they’re seen and less need to divert ambulances. Those benefits would depend on the quality of the measurements and forecasts, and on how managers respond to alerts during the pilot."
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "paragraphs": [
+        "The proposal brings live occupancy counts and short-term forecasting into one hospital operations workflow. The single-department pilot would test whether earlier visibility helps staff allocate beds, plan shifts, and reduce delays before the hospital invests in a broader rollout."
+      ]
+    },
+    {
+      "id": "references",
+      "title": "References",
+      "paragraphs": [
+        "Ayouni, S., Maddeh, M., Al-Otaibi, S., Alazzam, M. B., Alturki, N., & Hajjej, F. (2023). Development of a smart hospital bed based on deep learning to monitor patient conditions. Journal of Disability Research, 2(2), 25–36. DOI 10.57197/JDR-2023-0017.",
+        "Deng, L., Cheng, F., Gao, X., Yu, W., Shi, J., Zhou, L., Zhang, L., Li, M., Wang, Z., Zhang, Y.-D., & Lv, Y. (2023). Hospital crowdedness evaluation and in-hospital resource allocation based on image recognition technology. Scientific Reports, 13, Article 299. DOI 10.1038/s41598-022-24221-6.",
+        "Taylor, T. M., Lopez, K. P., & James, J. F. (2025). Machine-learning models for emergency department patient-flow forecasting. Journal of Frontiers in Multidisciplinary Research, 6(2), 574–582. DOI 10.54660/JFMR.2025.6.2.574-582."
+      ]
+    }
+  ]
+}
