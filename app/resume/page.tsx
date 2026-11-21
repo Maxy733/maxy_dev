@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
+import Link from 'next/link';
 import resumePreview from './resume-preview.png';
 
 export const metadata: Metadata = { title: 'Résumé' };
@@ -7,6 +8,9 @@ export const metadata: Metadata = { title: 'Résumé' };
 export default function ResumePage() {
   return (
     <main id="main" className="shell resume-page">
+      <Link className="primary-action case-back" href="/">
+        <span aria-hidden="true">←</span> Back
+      </Link>
       <div className="resume-heading">
         <h1>Résumé</h1>
         <a className="primary-action" href="/max-tay-za-resume.pdf" download="Kyaw_Tay_Za_Resume_Public.pdf">

@@ -1,0 +1,74 @@
+{
+  "slug": "au-living",
+  "title": "AU Living Condo Rental Prototype Report",
+  "category": "Service design project",
+  "description": "A student housing service concept with a Figma prototype for rental listings and a tabletop model of an information hub.",
+  "authors": ["Kyaw Tay Za"],
+  "affiliation": "Assumption University · Team project",
+  "keywords": [
+    "student housing",
+    "service design",
+    "rental listings",
+    "digital prototyping",
+    "physical prototyping"
+  ],
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "Project Overview",
+      "paragraphs": [
+        "AU Living was a team project presented at Assumption University in February 2025. Its objective was to help students find condos near campus by combining a rental listings website with access to in-person assistance."
+      ]
+    },
+    {
+      "id": "student-feedback",
+      "title": "Student Feedback and Design Requirements",
+      "paragraphs": [
+        "The team surveyed 51 students. High rental costs were the most frequently selected concern, at 39.2%. Students also identified difficulties contacting landlords, finding available units, and understanding lease terms.",
+        "The design prioritized visible starting rents, listings that students could compare in one place, and access to assistance with availability and lease questions."
+      ]
+    },
+    {
+      "id": "digital-prototype",
+      "title": "Digital Prototype",
+      "paragraphs": [
+        "The Figma prototype opens on the property listings page. Each sample listing includes a photo, a short description, the starting rent, and a link to the property details. Students can also filter listings and open the hub page.",
+        "The accompanying storyboard outlines a rental search from filtering and shortlisting to contacting landlords and visiting properties."
+      ],
+      "link": {
+        "label": "Open Figma prototype",
+        "href": "https://www.figma.com/proto/LOjpSo5hDXfCqX5qNmf6QY/AU-Living?node-id=19-4&t=WHjSlEZNSE2W3fl5-1&starting-point-node-id=1%3A30"
+      }
+    },
+    {
+      "id": "physical-prototype",
+      "title": "Physical Miniature Prototype",
+      "paragraphs": [
+        "The tabletop model shows the proposed information hub with a reception desk, computer stations, lounge seating, and meeting tables. A student could review a shortlist at a computer station and meet with an assistant to discuss a property’s availability, fees, or lease terms."
+      ],
+      "figures": [
+        {
+          "src": "/articles/au-living/physical-hub-miniature.webp",
+          "width": 1700,
+          "height": 1275,
+          "alt": "AU Living’s tabletop miniature with a reception desk, small computer stations, blue lounge seats, consultation tables, and a display board about the rental service.",
+          "caption": "AU Living’s physical model, showing the reception desk, listing stations, and meeting areas."
+        }
+      ]
+    },
+    {
+      "id": "contribution",
+      "title": "Project Contribution",
+      "paragraphs": [
+        "My part of the pitch covered what students needed from a rental service, including affordable options near campus, trustworthy listings, clear lease terms, and timely responses from property managers."
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Outcome and Proposed Next Steps",
+      "paragraphs": [
+        "The prototypes demonstrated a proposed handoff between online search and in-person assistance. The pitch identified listing verification and tools for landlords to manage their posts as possible additions. The team also proposed exploring a partnership with the university dormitory."
+      ]
+    }
+  ]
+}
