@@ -9,7 +9,13 @@ import { getCaseStudyReturn, setCaseStudyReturn } from './case-study-return';
 
 const homeSections = new Set(['projects', 'work', 'career', 'articles', 'about', 'contact']);
 type SectionTransition = 'projects' | 'career' | null;
-type SectionAnimation = { destination: NonNullable<SectionTransition>; cancel: () => void };
+type SectionAnimation = { destination: NonNullable<SectionTransition> | 'home'; cancel: () => void };
+
+function isWorkActive() {
+  const work = document.getElementById('projects')?.getBoundingClientRect();
+  const headerBottom = document.querySelector('.site-header')?.getBoundingClientRect().bottom ?? 0;
+  return !!work && work.top <= headerBottom + 28 && work.bottom > (headerBottom + window.innerHeight) / 2;
+}
 
 function isCareerVisible() {
   const career = document.getElementById('career')?.getBoundingClientRect();
@@ -48,6 +54,38 @@ export function SectionNavigation() {
   const pendingSection = useRef<{ id: string; transition: SectionTransition } | null>(null);
   const arcadeScroll = useRef<ReturnType<typeof connectArcadeScroll>>(null);
   const sectionAnimation = useRef<SectionAnimation | null>(null);
+
+  const startHome = useCallback(() => {
+    if (sectionAnimation.current?.destination === 'home') return;
+    sectionAnimation.current?.cancel();
+
+    const enterHome = () => { scrollToSection('main', 'instant'); };
+    const finish = () => { sectionAnimation.current = null; };
+    const fromLowerSection = isLowerHomeSectionActive();
+    const fromWork = !fromLowerSection && isWorkActive();
+    if (!fromLowerSection && !fromWork && isCareerVisible()) {
+      const cancel = playCareerTv({
+        reverse: true,
+        prepare: () => arcadeScroll.current?.skip(),
+        arrive: enterHome,
+        finish,
+      });
+      if (cancel) {
+        sectionAnimation.current = { destination: 'home', cancel };
+        return;
+      }
+    }
+
+    const cancel = arcadeScroll.current?.returnHome(() => {
+      finish();
+      enterHome();
+    }, fromWork);
+    if (cancel) {
+      sectionAnimation.current = { destination: 'home', cancel: () => { cancel(); finish(); } };
+    } else {
+      enterHome();
+    }
+  }, []);
 
   const startWork = useCallback(() => {
     const enterWork = () => scrollToSection('projects', 'instant');
@@ -104,6 +142,10 @@ export function SectionNavigation() {
     if (pathname === '/' && getCaseStudyReturn()) {
       setCaseStudyReturn(null);
     } else if (pathname === '/' && pending) {
+      if (pending.id === 'career' && !pending.transition) {
+        const career = document.getElementById('career');
+        if (career) career.dataset.tvEntry = 'settled';
+      }
       if (!pending.transition && scrollToSection(pending.id, 'instant')) pendingSection.current = null;
     } else {
       scrollToFragment();
@@ -148,6 +190,11 @@ export function SectionNavigation() {
       const transition: SectionTransition = section === 'projects' && link.hasAttribute('data-arcade-zoom') ? 'projects'
         : section === 'career' && link.hasAttribute('data-career-tv') ? 'career' : null;
       const samePage = url.origin === window.location.origin && url.pathname === window.location.pathname;
+      if (samePage && url.pathname === '/' && link.hasAttribute('data-arcade-home')) {
+        event.preventDefault();
+        startHome();
+        return;
+      }
       if (samePage && transition && sectionAnimation.current?.destination === transition) {
         event.preventDefault();
         return;
@@ -187,9 +234,11 @@ export function SectionNavigation() {
         if (zoomed || scrollToSection(section)) event.preventDefault();
       } else if (url.pathname === '/' && homeSections.has(section)) {
         event.preventDefault();
-        const returningProject = link.dataset.caseStudyProject ?? null;
+        const project = link.dataset.caseStudyProject;
+        const fromCareer = !!project && new URLSearchParams(window.location.search).get('from') === 'career';
+        const returningProject = fromCareer ? null : project ?? null;
         setCaseStudyReturn(returningProject);
-        pendingSection.current = returningProject ? null : { id: section, transition };
+        pendingSection.current = returningProject ? null : { id: fromCareer ? 'career' : section, transition };
         router.push(url.pathname + url.search, {
           scroll: false,
           transitionTypes: returningProject ? [caseStudyTransitionType] : undefined,
@@ -200,7 +249,7 @@ export function SectionNavigation() {
     // Handle section links before Next.js writes a fragment to the address bar.
     document.addEventListener('click', handleClick, true);
     return () => document.removeEventListener('click', handleClick, true);
-  }, [router, startAfterHome, startCareer, startWork]);
+  }, [router, startAfterHome, startCareer, startHome, startWork]);
 
   return null;
 }

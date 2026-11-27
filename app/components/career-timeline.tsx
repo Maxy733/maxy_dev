@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useRef, type CSSProperties } from 'react';
 import { connectCareerKnight } from './career-knight';
 
@@ -16,14 +15,14 @@ const milestones = [
     label: 'Senior Project 1',
     title: 'Libby Bot Library AI',
     detail: 'AI book recommendations',
-    href: '/work/libby-bot',
+    href: '/work/libby-bot?from=career',
     marker: 'crt',
   },
   {
     label: 'Senior Project 2',
     title: 'AU Document Wallet',
     detail: 'Digital credentials',
-    href: '/work/au-document-wallet',
+    href: '/work/au-document-wallet?from=career',
     marker: 'wallet',
   },
   {
@@ -64,7 +63,7 @@ export function CareerTimeline() {
             <span className="career-marker" data-marker={marker} aria-hidden="true" />
             <div className="career-stop-copy">
               {dateTime ? <time dateTime={dateTime}>{label}</time> : <span>{label}</span>}
-              <h3>{href ? <Link className="text-link" href={href}>{title}</Link> : title}</h3>
+              <h3>{href ? <a className="text-link" href={href}>{title}</a> : title}</h3>
               <p>{detail}</p>
             </div>
           </li>
