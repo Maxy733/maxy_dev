@@ -22,7 +22,6 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
   camera.append(image);
 
   const initialOffset = projects.getBoundingClientRect().top - header.getBoundingClientRect().bottom;
-  let arrived = initialOffset <= 28;
   let workDocked = Math.abs(initialOffset) <= 1;
   let canLeaveWork = workDocked;
   let lastScrollY = window.scrollY;
@@ -31,13 +30,15 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
   let revealTimer = 0;
   let revealRun = 0;
   let scrollFrame = 0;
-  let exitStarted: number | null = null;
-  let exitFrame = 0;
+  let zoomingToWork = false;
   let homeReturn: { cancel: () => void; finish: () => void } | null = null;
+  let swipe: { x: number; y: number; handled: boolean } | null = null;
 
   function cancelScroll() {
+    if (!scrollFrame) return;
     window.cancelAnimationFrame(scrollFrame);
     scrollFrame = 0;
+    reset();
   }
 
   function unlockScroll() {
@@ -45,20 +46,13 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
     delete document.documentElement.dataset.arcadeScrollLocked;
   }
 
-  function clearExitCut() {
-    window.cancelAnimationFrame(exitFrame);
-    exitFrame = 0;
-    exitStarted = null;
-  }
-
   const reset = () => {
     window.clearTimeout(revealTimer);
-    clearExitCut();
     revealRun += 1;
     unlockScroll();
     camera.remove();
     delete projects.dataset.arcadeEntry;
-    arrived = false;
+    zoomingToWork = false;
     bypass = false;
     workDocked = false;
     canLeaveWork = false;
@@ -98,7 +92,7 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
       if (Math.abs(window.scrollY - lockedAt) > 1) window.scrollTo({ top: lockedAt, behavior: 'instant' });
       return;
     }
-
+    if (!zoomingToWork) return;
     const headerBottom = header.getBoundingClientRect().bottom;
     const viewportHeight = window.innerHeight - headerBottom;
     const distance = projects.getBoundingClientRect().top - headerBottom;
@@ -107,27 +101,16 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
 
     const settleMargin = Math.min(28, travel * .08);
     const progress = clamp((travel - distance) / (travel - settleMargin));
-    const startingExit = arrived && !bypass && !camera.isConnected;
-    if (progress === 0 && exitStarted === null && !startingExit) {
-      if (arrived || bypass || camera.isConnected) reset();
-      return;
-    }
+    if (bypass) return;
+    if (progress === 0) return;
 
     if (progress === 1) {
-      clearExitCut();
       camera.remove();
-      if (arrived || scrollFrame) return;
-      arrived = true;
-      if (bypass || distance <= -projects.offsetHeight) {
-        bypass = false;
-        delete projects.dataset.arcadeEntry;
-        return;
-      }
-
+      if (scrollFrame) return;
+      zoomingToWork = false;
       window.scrollTo({ top: window.scrollY + distance, behavior: 'instant' });
       lockedAt = window.scrollY;
       workDocked = true;
-      document.documentElement.dataset.arcadeScrollLocked = '';
       projects.dataset.arcadeEntry = 'blank';
       const run = ++revealRun;
       revealTimer = window.setTimeout(() => {
@@ -142,37 +125,13 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
       }, 160);
       return;
     }
-    if (bypass) return;
-
     if (!camera.isConnected) {
-      if (!arrived) projects.dataset.arcadeEntry = 'blank';
+      projects.dataset.arcadeEntry = 'blank';
       camera.setAttribute('data-signal-cut', '');
       document.body.append(camera);
-      if (arrived) exitStarted = performance.now();
     }
 
-    // Hold for the glitch, then catch the camera up to the current scroll position.
-    const release = exitStarted === null ? 1 : clamp((performance.now() - exitStarted - signalDuration) / 340);
-    if (exitStarted !== null) {
-      if (release > 0) camera.removeAttribute('data-signal-cut');
-      if (release === 1) {
-        clearExitCut();
-        if (progress === 0) {
-          reset();
-          return;
-        }
-      } else if (!exitFrame) {
-        exitFrame = window.requestAnimationFrame(() => {
-          exitFrame = 0;
-          update();
-        });
-      }
-    }
-
-    const cameraProgress = 1 - (1 - progress) * ease(release);
-    const projectFade = clamp((1 - cameraProgress) / .14);
-    const reverseOpacity = Math.max(1 - release, Math.min(clamp(cameraProgress / .15), projectFade));
-    paintCamera(cameraProgress, arrived ? reverseOpacity : projectFade, headerBottom);
+    paintCamera(progress, clamp((1 - progress) / .14), headerBottom);
   };
 
   const returnHome = (complete: () => void, fromWork = false) => {
@@ -245,6 +204,8 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
     const startY = window.scrollY;
     const distance = projects.getBoundingClientRect().top - header.getBoundingClientRect().bottom;
     if (distance <= 1) return false;
+    zoomingToWork = true;
+    document.documentElement.dataset.arcadeScrollLocked = '';
     const startAt = performance.now();
 
     function scroll(now: number) {
@@ -275,10 +236,65 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
     update();
   }
 
+  const autoScroll = (direction: number) => {
+    if (zoomingToWork || homeReturn || lockedAt !== null || document.documentElement.hasAttribute('data-career-tv-locked')) return true;
+
+    const distance = projects.getBoundingClientRect().top - header.getBoundingClientRect().bottom;
+    if (direction > 0 && distance > 1) {
+      const enterWork = () => {
+        projects.tabIndex = -1;
+        projects.focus({ preventScroll: true });
+        projects.scrollIntoView({ behavior: 'instant', block: 'start' });
+      };
+      if (!start(enterWork)) enterWork();
+      return true;
+    }
+    if (direction < 0 && Math.abs(distance) <= 2) {
+      const enterHome = () => {
+        hero.tabIndex = -1;
+        hero.focus({ preventScroll: true });
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      };
+      if (!returnHome(enterHome, true)) enterHome();
+      return true;
+    }
+    return false;
+  };
+
+  function onWheel(event: WheelEvent) {
+    if (event.defaultPrevented || event.ctrlKey || !event.deltaY || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+    if (autoScroll(event.deltaY)) event.preventDefault();
+  }
+
+  function onTouchStart(event: TouchEvent) {
+    const carousel = event.target instanceof Element && event.target.closest('.arcade-feature, .arcade-project-grid');
+    const touch = event.touches.length === 1 ? event.touches[0] : null;
+    swipe = touch && !carousel ? { x: touch.clientX, y: touch.clientY, handled: false } : null;
+  }
+
+  function onTouchMove(event: TouchEvent) {
+    if (!swipe || event.touches.length !== 1 || !event.cancelable) return;
+    const touch = event.touches[0];
+    const delta = swipe.y - touch.clientY;
+    if (swipe.handled || (Math.abs(delta) > Math.abs(swipe.x - touch.clientX) && autoScroll(delta))) {
+      swipe.handled = true;
+      event.preventDefault();
+    }
+  }
+
   function onKeyDown(event: KeyboardEvent) {
-    if (event.key !== 'Escape' || !homeReturn) return;
-    event.preventDefault();
-    homeReturn.finish();
+    if (event.key === 'Escape' && homeReturn) {
+      event.preventDefault();
+      homeReturn.finish();
+      return;
+    }
+    if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
+    const target = event.target;
+    if (target instanceof Element && target.closest('input, textarea, select, [contenteditable]')) return;
+
+    const direction = event.key === 'ArrowDown' || event.key === 'PageDown' ? 1
+      : event.key === 'ArrowUp' || event.key === 'PageUp' ? -1 : 0;
+    if (direction && autoScroll(direction)) event.preventDefault();
   }
 
   const onScroll = () => {
@@ -290,11 +306,17 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
     const bounds = projects.getBoundingClientRect();
     const distance = bounds.top - header.getBoundingClientRect().bottom;
     workDocked = Math.abs(distance) <= 1;
-    if (!motion.matches && lockedAt === null && !scrollFrame && !bypass) {
+    if (!motion.matches && lockedAt === null && !zoomingToWork) {
       // Let short viewports scroll through the entire CRT before switching to Career.
       const exitY = scrollY + Math.max(distance, bounds.bottom - window.innerHeight);
-      if (arrived && scrollY < previousY && distance <= 1 && scrollY <= exitY + 2) canLeaveWork = true;
-      if (canLeaveWork && previousY <= exitY + 2 && scrollY > exitY + 2) {
+      if (distance > 1) {
+        canLeaveWork = false;
+        if (scrollY <= 1) bypass = false;
+      } else if (scrollY <= exitY + 2) {
+        if (scrollY < previousY) bypass = false;
+        canLeaveWork = !bypass;
+      }
+      if (!bypass && canLeaveWork && previousY <= exitY + 2 && scrollY > exitY + 2) {
         canLeaveWork = false;
         window.scrollTo({ top: exitY, behavior: 'instant' });
         if (leaveWork()) return;
@@ -317,8 +339,9 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
 
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onResize);
-  window.addEventListener('wheel', cancelScroll, { passive: true });
-  window.addEventListener('touchstart', cancelScroll, { passive: true });
+  window.addEventListener('wheel', onWheel, { passive: false });
+  window.addEventListener('touchstart', onTouchStart, { passive: true });
+  window.addEventListener('touchmove', onTouchMove, { passive: false });
   window.addEventListener('keydown', onKeyDown);
   motion.addEventListener('change', onMotionChange);
 
@@ -334,8 +357,9 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
     disconnect() {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
-      window.removeEventListener('wheel', cancelScroll);
-      window.removeEventListener('touchstart', cancelScroll);
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('keydown', onKeyDown);
       motion.removeEventListener('change', onMotionChange);
       homeReturn?.cancel();

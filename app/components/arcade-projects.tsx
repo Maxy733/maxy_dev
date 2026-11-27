@@ -177,7 +177,15 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
   }, [projectOrder, projects, rotation]);
 
   if (!featured) return null;
-  const caseStudyHref = `/work/${featured.slug}`;
+  const readMoreLabel = 'Read More';
+  const caseStudyLink = {
+    href: `/work/${featured.slug}`,
+    transitionTypes: [caseStudyTransitionType],
+    onNavigate: () => {
+      pendingSelection.current = null;
+      setRotation(null);
+    },
+  };
   const projectImage = featured.preview ?? featured.screenshot;
   const projectVisual = (
     <CaseStudyCardMatch key={featured.slug} slug={featured.slug}>
@@ -263,27 +271,20 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
                       <button type="button" aria-label="Next project" onClick={() => rotate(1, true)} />
                     </>
                   )}>
-                    {projectVisual}
+                    <Link {...caseStudyLink} className="arcade-preview-link" aria-label={`Read more about ${featured.title}`}>
+                      {projectVisual}
+                    </Link>
                   </ProjectPreviewWindow>
                 ) : projectVisual}
                 <div className="arcade-feature-copy">
                   <div className="arcade-feature-description">
                     <p>{featured.description}</p>
-                    <div className="arcade-description-sizing" aria-hidden="true">
-                      {projects.map(({ slug, description }) => <p key={slug}>{description}</p>)}
-                    </div>
+                    <Link {...caseStudyLink} className="text-link">{readMoreLabel}</Link>
                   </div>
-                  <Link
-                    className="text-link"
-                    href={caseStudyHref}
-                    transitionTypes={[caseStudyTransitionType]}
-                    onNavigate={() => {
-                      pendingSelection.current = null;
-                      setRotation(null);
-                    }}
-                  >
-                    Read the case study
-                  </Link>
+                  <div className="arcade-description-sizing" aria-hidden="true">
+                    {projects.map(({ slug, description }) => <p key={slug}>{description}</p>)}
+                    <span className="text-link">{readMoreLabel}</span>
+                  </div>
                 </div>
               </div>
             </article>
@@ -291,7 +292,7 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
               {upcoming.map((projectIndex, index) => {
                 const { slug, title } = projects[projectIndex];
                 return (
-                  <li key={slug} data-moving-tile={index === rotation?.tileIndex ? '' : undefined} style={{ '--project-order': index } as CSSProperties}>
+                  <li key={slug} data-project-slug={slug} data-moving-tile={index === rotation?.tileIndex ? '' : undefined} style={{ '--project-order': index } as CSSProperties}>
                     <button type="button" onClick={(event) => selectProject(projectIndex, event.currentTarget)}>{title}</button>
                   </li>
                 );

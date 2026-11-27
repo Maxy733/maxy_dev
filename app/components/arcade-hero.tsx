@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react';
 import '@fontsource/silkscreen/latin-700.css';
 
 type ArtworkBounds = readonly [x: number, y: number, width: number, height: number];
@@ -192,6 +192,12 @@ function artworkPlacement([x, y, width, height]: ArtworkBounds) {
   };
 }
 
+function artworkCrop([x, y, width, height]: ArtworkBounds) {
+  const position = `${x / (1280 - width) * 100}% ${y / (768 - height) * 100}%`;
+  const size = `${1280 / width * 100}% ${768 / height * 100}%`;
+  return `${position} / ${size}`;
+}
+
 const cabinetOutline = `M 5 121 Q 5 117 11 115 L 81 102 Q 85 100 91 104 L 198 163 Q 202 165 202 170
   L 200 304 Q 200 308 195 312 L 198 360 Q 200 393 213 425 L 215 435 L 214 579
   Q 222 579 222 585 Q 222 593 209 602 L 206 609 L 209 620 L 244 625 L 286 628
@@ -204,6 +210,14 @@ const tvOutline = `M 935 128 Q 935 125 939 122 L 989 91 Q 998 85 1005 82
   L 1199 131 Q 1199 134 1196 136 L 1189 141 Q 1186 143 1186 148 L 1186 158
   L 1169 166 L 1130 182 L 1090 198 L 1036 219 L 990 237 L 951 252
   Q 948 253 947 249 L 946 237 Q 945 234 942 232 Q 936 229 935 220 Z`;
+
+const straightOutlines = {
+  cabinet: `M 5 118 L 85 101 L 201 166 L 200 305 L 195 312 L 198 363 L 215 435
+    L 214 579 L 222 582 L 220 594 L 206 608 L 209 621 L 291 630 L 290 649
+    L 307 656 L 307 693 L 248 768 H 151 L 5 757 Z`,
+  tv: `M 935 125 L 1009 80 L 1190 100 L 1198 106 L 1198 134 L 1186 142
+    V 158 L 948 253 L 946 235 L 935 228 Z`,
+};
 
 function ArcadeHotspot({ kind, bounds, outline, href, label, zoom }: {
   kind: 'cabinet' | 'tv';
@@ -218,7 +232,9 @@ function ArcadeHotspot({ kind, bounds, outline, href, label, zoom }: {
   const mask = `arcade-${kind}-mask`;
 
   return (
-    <div className={`arcade-hotspot arcade-${kind}`} style={artworkPlacement(bounds)}>
+    <div className={`arcade-hotspot arcade-${kind}`} style={{
+      ...artworkPlacement(bounds), '--hotspot-x': x / 1280, '--hotspot-y': y / 768,
+    } as CSSProperties}>
       <svg className="arcade-hotspot-trace" viewBox={`${x} ${y} ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
         <defs>
           <path id={silhouette} vectorEffect="non-scaling-stroke" d={outline} />
@@ -226,18 +242,56 @@ function ArcadeHotspot({ kind, bounds, outline, href, label, zoom }: {
             <use href={`#${silhouette}`} transform={`scale(${1 / width} ${1 / height}) translate(${-x} ${-y})`} />
           </clipPath>
         </defs>
-        <use className="arcade-hotspot-ink" href={`#${silhouette}`} />
+        <g className="arcade-hotspot-highlight">
+          <use className="arcade-hotspot-ink" href={`#${silhouette}`} />
+          <path className="arcade-hotspot-outline" d={straightOutlines[kind]} pathLength={1} vectorEffect="non-scaling-stroke" />
+        </g>
       </svg>
+      <span className="arcade-hotspot-art" style={{ clipPath: `url(#${mask})` }} aria-hidden="true" />
       <a className="arcade-hotspot-link" style={{ clipPath: `url(#${mask})` }} href={href} data-arcade-zoom={zoom || undefined} data-career-tv={kind === 'tv' || undefined} aria-label={label}>
-        <span className="arcade-hotspot-screen" aria-hidden="true">
-          <span className="arcade-screen-pixels"><i /><i /><i /><i /></span>
-        </span>
+        <span className="arcade-hotspot-screen" aria-hidden="true" />
       </a>
     </div>
   );
 }
 
 export function ArcadeHero({ children, projectsHref, careerHref }: { children: ReactNode; projectsHref: string; careerHref: string }) {
+  const heroRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    const hero = heroRef.current;
+    if (!hero || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const introKey = 'maxy.arcade-intro-seen';
+    try {
+      if (localStorage.getItem(introKey)) return;
+    } catch {
+      // The intro can still play if browser storage is unavailable.
+    }
+
+    const playIntro = () => {
+      hero.dataset.arcadeIntro = '';
+      try {
+        localStorage.setItem(introKey, '1');
+      } catch {
+        // Storage is only used to remember the first visit.
+      }
+    };
+
+    if (!window.location.hash && window.scrollY <= 1) {
+      playIntro();
+      return;
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.intersectionRatio < .6) return;
+      playIntro();
+      observer.disconnect();
+    }, { threshold: .6 });
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, []);
+
   function followPointer(event: PointerEvent<HTMLDivElement>) {
     if (event.pointerType === 'touch' || !(event.target instanceof Element) || !event.target.closest('.arcade-hotspot-link')) return;
 
@@ -255,7 +309,7 @@ export function ArcadeHero({ children, projectsHref, careerHref }: { children: R
   }
 
   return (
-    <section className="hero text-center" aria-labelledby="hero-title" data-arcade-inactive="">
+    <section ref={heroRef} className="hero text-center" aria-labelledby="hero-title" data-arcade-inactive="">
       <div className="shell hero-content">{children}</div>
       <div className="arcade-layer" onPointerOver={followPointer} onPointerMove={followPointer}
         onPointerLeave={(event) => { delete event.currentTarget.dataset.pointerHint; }}>
@@ -265,8 +319,9 @@ export function ArcadeHero({ children, projectsHref, careerHref }: { children: R
               data-crt-flicker={mode === 'flicker' || undefined} key={src} aria-hidden="true" style={{
               ...artworkPlacement(bounds), clipPath: glass,
               '--screen-gif': `url('${src}')`, '--screen-tilt': tilt && `${tilt}deg`,
+              '--screen-artwork-crop': mode === 'projects' ? artworkCrop(bounds) : undefined,
             } as CSSProperties}>
-              <span />
+              <span>{mode === 'projects' && <i />}</span>
             </div>
           ))}
           <ArcadeHotspot kind="cabinet" bounds={[0, 101, 310, 667]} outline={cabinetOutline} href={projectsHref} label="Browse projects via the left arcade cabinet" zoom />

@@ -15,7 +15,7 @@ function positionHint(event: PointerEvent<HTMLAnchorElement>) {
 
 export function SiteBrand() {
   return (
-    <Link className="brand" href="/" aria-label="Kyaw Tay Za, home" aria-describedby="site-brand-role"
+    <Link className="brand" href="/" data-arcade-home aria-label="Kyaw Tay Za, home" aria-describedby="site-brand-role"
       onPointerEnter={positionHint} onPointerMove={positionHint}
       onPointerLeave={(event) => { delete event.currentTarget.dataset.pointerHint; }}>
       <span className="brand-mark" aria-hidden="true">@</span>

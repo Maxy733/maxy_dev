@@ -1,3 +1,5 @@
+import { typeTerminalText } from './terminal-text';
+
 function typeCareerText(career: HTMLElement, signal: AbortSignal) {
   const lines = [
     { part: 'heading', interval: 75 },
@@ -6,65 +8,10 @@ function typeCareerText(career: HTMLElement, signal: AbortSignal) {
     { part: 'education-details', interval: 22, delay: 650 },
     { part: 'skills-title', interval: 75, delay: 1150 },
     { part: 'skills-details', interval: 12, delay: 1650 },
-  ].flatMap(({ part, interval, delay = 0 }) => {
-    const line = career.querySelector<HTMLElement>(`[data-career-terminal="${part}"]`);
-    const source = line?.querySelector('.career-terminal-source')?.textContent;
-    const output = line?.querySelector<HTMLElement>('.career-terminal-output');
-    if (!line || !source || !output) return [];
-    return [{ line, output, letters: Array.from(source), interval, delay, count: -1 }];
-  });
-
-  for (const { line } of lines) line.dataset.typing = 'waiting';
-  const startsAt = performance.now() + 150;
-
-  return new Promise<void>((resolve) => {
-    let frame = 0;
-
-    function stop() {
-      window.cancelAnimationFrame(frame);
-      signal.removeEventListener('abort', stop);
-      for (const { line, output } of lines) {
-        delete line.dataset.typing;
-        output.textContent = '';
-      }
-      resolve();
-    }
-
-    function tick(now: number) {
-      const elapsed = now - startsAt;
-      if (elapsed < 0) {
-        frame = window.requestAnimationFrame(tick);
-        return;
-      }
-
-      let remaining = false;
-      for (const entry of lines) {
-        if (entry.count === entry.letters.length) continue;
-        const lineElapsed = elapsed - entry.delay;
-        if (lineElapsed < 0) {
-          remaining = true;
-          continue;
-        }
-        const count = Math.min(entry.letters.length, 1 + Math.floor(lineElapsed / entry.interval));
-        if (count !== entry.count) {
-          entry.count = count;
-          entry.line.dataset.typing = 'active';
-          entry.output.textContent = entry.letters.slice(0, count).join('');
-        }
-        if (count === entry.letters.length) {
-          delete entry.line.dataset.typing;
-          entry.output.textContent = '';
-        } else {
-          remaining = true;
-        }
-      }
-      if (remaining) frame = window.requestAnimationFrame(tick);
-      else stop();
-    }
-
-    signal.addEventListener('abort', stop, { once: true });
-    frame = window.requestAnimationFrame(tick);
-  });
+  ].map(({ part, interval, delay }) => ({
+    line: career.querySelector<HTMLElement>(`[data-career-terminal="${part}"]`), interval, delay,
+  }));
+  return typeTerminalText(lines, signal);
 }
 
 export function playCareerTv({ prepare, arrive, finish, reverse = false }: {
