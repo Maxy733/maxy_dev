@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
+import { localizedPath, ui, type Locale } from '../locale';
 import type { Project, ProjectImage } from '../projects';
+import { skipsArcadeZoom, subscribeToArcadeMotion } from './arcade-motion-preference';
 import { CaseStudyCardMatch, caseStudyTransitionType } from './case-study-match';
 import { useCaseStudyReturn } from './case-study-return';
 import { ProjectPlaceholder } from './project-placeholder';
@@ -15,13 +17,16 @@ type TileMotion = { tileIndex: number; travel?: { x: number; y: number } };
 type Rotation = TileMotion & { phase: 'leaving' | 'arriving'; direction: Direction; announce: boolean };
 const rotationInterval = 8000;
 const gestureThreshold = 36;
+const scrollGutter = 44;
 
 function isProjectArea(target: EventTarget | null) {
   return target instanceof Element && !!target.closest('.arcade-feature, .arcade-project-grid');
 }
 
-export function ArcadeProjects({ projects }: { projects: readonly CarouselProject[] }) {
+export function ArcadeProjects({ projects, locale }: { projects: readonly CarouselProject[]; locale: Locale }) {
+  const text = ui[locale];
   const screen = useRef<HTMLElement>(null);
+  const content = useRef<HTMLDivElement>(null);
   const feature = useRef<HTMLDivElement>(null);
   const wheelGesture = useRef({ lastEvent: -Infinity, distance: 0, rotated: false });
   const touchStart = useRef<{ id: number; x: number; y: number } | null>(null);
@@ -34,6 +39,8 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
   const [revealing, setRevealing] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [gestureScrolling, setGestureScrolling] = useState(false);
+  const motionProof = useSyncExternalStore(subscribeToArcadeMotion, skipsArcadeZoom, () => false);
   const returningProject = useCaseStudyReturn();
   const [handledReturn, setHandledReturn] = useState<typeof returningProject>(null);
 
@@ -50,7 +57,9 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
   const [featuredIndex, ...upcoming] = projectOrder;
   const featured = projects[featuredIndex];
   const canRotate = projectOrder.length > 1;
-  const showPlayback = canRotate && !reducedMotion;
+  const showPlayback = canRotate && (!reducedMotion || motionProof);
+  const playbackLabel = motionProof ? text.rotationDisabled
+    : paused ? text.play : text.pause;
   const tileTravel = rotation?.phase === 'leaving' ? rotation.travel : undefined;
 
   const rotate = useCallback((direction: Direction, announce: boolean, selection?: TileMotion) => {
@@ -110,7 +119,34 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
 
   useEffect(() => {
     const section = screen.current;
-    if (!section || !canRotate) return;
+    const carousel = content.current;
+    const header = document.querySelector<HTMLElement>('.site-header');
+    if (!section || !carousel || !header || !canRotate) return;
+
+    const mobile = window.matchMedia('(max-width: 760px), (pointer: coarse)');
+    const syncGestures = () => {
+      const availableHeight = window.innerHeight - header.offsetHeight;
+      const hasSideGutters = section.clientWidth - carousel.clientWidth >= scrollGutter * 2;
+      setGestureScrolling(!mobile.matches && hasSideGutters && section.offsetHeight <= availableHeight + 2);
+    };
+    const resize = new ResizeObserver(syncGestures);
+    resize.observe(section);
+    resize.observe(carousel);
+    resize.observe(header);
+    window.addEventListener('resize', syncGestures);
+    mobile.addEventListener('change', syncGestures);
+    syncGestures();
+
+    return () => {
+      resize.disconnect();
+      window.removeEventListener('resize', syncGestures);
+      mobile.removeEventListener('change', syncGestures);
+    };
+  }, [canRotate]);
+
+  useEffect(() => {
+    const section = screen.current;
+    if (!section || !gestureScrolling) return;
 
     function onWheel(event: WheelEvent) {
       if (event.ctrlKey || !isProjectArea(event.target)) return;
@@ -136,10 +172,10 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
 
     section.addEventListener('wheel', onWheel, { passive: false });
     return () => section.removeEventListener('wheel', onWheel);
-  }, [canRotate, rotate]);
+  }, [gestureScrolling, rotate]);
 
   useEffect(() => {
-    if (!canRotate || !inView || revealing || reducedMotion || paused || rotation) return;
+    if (!canRotate || !inView || revealing || reducedMotion || motionProof || paused || rotation) return;
 
     const timer = window.setInterval(() => {
       if (document.hidden || touchStart.current || screen.current?.querySelector('.arcade-project-content :is(a, .arcade-project-grid button, .preview-controls button):is(:hover, :focus), .arcade-feature:focus')) return;
@@ -147,7 +183,7 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
     }, rotationInterval);
 
     return () => window.clearInterval(timer);
-  }, [canRotate, inView, revealing, reducedMotion, paused, rotate, rotation]);
+  }, [canRotate, inView, revealing, reducedMotion, motionProof, paused, rotate, rotation]);
 
   useLayoutEffect(() => {
     if (!rotation) return;
@@ -169,17 +205,17 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
         screen.current?.querySelector<HTMLElement>('#work')?.focus({ preventScroll: true });
       }
       setProjectOrder([nextIndex, ...queue]);
-      if (rotation.announce) setAnnouncement(`Featured project: ${projects[nextIndex].title}`);
+      if (rotation.announce) setAnnouncement(`${text.featured}: ${projects[nextIndex].title}`);
       setRotation({ ...rotation, phase: 'arriving', tileIndex: returnIndex });
     });
 
     return () => { active = false; };
-  }, [projectOrder, projects, rotation]);
+  }, [projectOrder, projects, rotation, text.featured]);
 
   if (!featured) return null;
-  const readMoreLabel = 'Read More';
+  const readMoreLabel = text.readMore;
   const caseStudyLink = {
-    href: `/work/${featured.slug}`,
+    href: localizedPath('/work/' + featured.slug, locale),
     transitionTypes: [caseStudyTransitionType],
     onNavigate: () => {
       pendingSelection.current = null;
@@ -192,13 +228,13 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
       {projectImage ? (
         <ProjectScreenshot screenshot={projectImage} />
       ) : (
-        <ProjectPlaceholder visual={featured.visual ?? 'screenshot'} title={featured.title} />
+        <ProjectPlaceholder visual={featured.visual ?? 'screenshot'} title={featured.title} locale={locale} />
       )}
     </CaseStudyCardMatch>
   );
 
   return (
-    <section id="projects" className="arcade-projects" aria-label="Projects" ref={screen}>
+    <section id="projects" className="arcade-projects" aria-label={text.projects} ref={screen}>
       <div className="arcade-project-screen">
         <div
           className="arcade-project-menu"
@@ -208,10 +244,10 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
           style={tileTravel ? { '--tile-travel-x': `${tileTravel.x}px`, '--tile-travel-y': `${tileTravel.y}px` } as CSSProperties : undefined}
           onKeyDown={(event) => {
             if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !canRotate) return;
-            if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+            if (event.key === 'ArrowRight' || (gestureScrolling && event.key === 'ArrowDown')) {
               event.preventDefault();
               rotate(1, true);
-            } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+            } else if (event.key === 'ArrowLeft' || (gestureScrolling && event.key === 'ArrowUp')) {
               event.preventDefault();
               rotate(-1, true);
             }
@@ -219,15 +255,16 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
         >
           <div
             className="arcade-project-content"
-            data-interactive={canRotate || undefined}
+            ref={content}
+            data-carousel-scroll={gestureScrolling || undefined}
             onPointerDown={(event) => {
-              if (!canRotate || event.pointerType !== 'touch' || !isProjectArea(event.target)) return;
+              if (!gestureScrolling || event.pointerType !== 'touch' || !isProjectArea(event.target)) return;
               touchStart.current = event.isPrimary ? { id: event.pointerId, x: event.clientX, y: event.clientY } : null;
             }}
             onPointerUp={(event) => {
               const start = touchStart.current;
-              if (!start || start.id !== event.pointerId) return;
               touchStart.current = null;
+              if (!gestureScrolling || !start || start.id !== event.pointerId) return;
               const x = start.x - event.clientX;
               const y = start.y - event.clientY;
               const distance = Math.abs(x) > Math.abs(y) ? x : y;
@@ -243,19 +280,20 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
               }
             }}
           >
-            <article id="work" className="arcade-feature" aria-labelledby="featured-title" aria-keyshortcuts={canRotate ? 'ArrowLeft ArrowRight ArrowUp ArrowDown' : undefined} tabIndex={canRotate ? 0 : undefined}>
+            <article id="work" className="arcade-feature" aria-labelledby="featured-title" aria-keyshortcuts={canRotate ? (gestureScrolling ? 'ArrowLeft ArrowRight ArrowUp ArrowDown' : 'ArrowLeft ArrowRight') : undefined} tabIndex={canRotate ? 0 : undefined}>
               <div className="arcade-feature-heading">
-                <p className="eyebrow">Featured project</p>
+                <p className="eyebrow">{text.featured}</p>
                 <div className="arcade-feature-title" data-playback={showPlayback || undefined}>
                   <h2 id="featured-title">{featured.title}</h2>
                   {showPlayback && (
                     <button
                       className="arcade-playback-toggle"
                       type="button"
+                      disabled={motionProof}
                       onClick={() => setPaused(!paused)}
-                      aria-label={paused ? 'Resume automatic project rotation' : 'Pause automatic project rotation'}
+                      aria-label={playbackLabel}
                     >
-                      <span data-play={paused || undefined} aria-hidden="true" />
+                      <span data-play={motionProof || paused || undefined} aria-hidden="true" />
                     </button>
                   )}
                   <div className="arcade-title-sizing" aria-hidden="true">
@@ -267,11 +305,11 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
                 {projectImage ? (
                   <ProjectPreviewWindow title={featured.title} controls={canRotate && (
                     <>
-                      <button type="button" aria-label="Previous project" data-previous onClick={() => rotate(-1, true)} />
-                      <button type="button" aria-label="Next project" onClick={() => rotate(1, true)} />
+                      <button type="button" aria-label={text.previousProject} data-previous onClick={() => rotate(-1, true)} />
+                      <button type="button" aria-label={text.nextProject} onClick={() => rotate(1, true)} />
                     </>
                   )}>
-                    <Link {...caseStudyLink} className="arcade-preview-link" aria-label={`Read more about ${featured.title}`}>
+                    <Link {...caseStudyLink} className="arcade-preview-link" aria-label={text.readAbout + ' ' + featured.title}>
                       {projectVisual}
                     </Link>
                   </ProjectPreviewWindow>
@@ -288,7 +326,7 @@ export function ArcadeProjects({ projects }: { projects: readonly CarouselProjec
                 </div>
               </div>
             </article>
-            <ul className="arcade-project-grid" aria-label="Project list">
+            <ul className="arcade-project-grid" aria-label={text.projectList}>
               {upcoming.map((projectIndex, index) => {
                 const { slug, title } = projects[projectIndex];
                 return (

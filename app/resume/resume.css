@@ -1,0 +1,7 @@
+.resume-page { max-width: 880px; padding-block: 22px 90px; }
+.resume-page > .case-back { margin-bottom: 22px; }
+.resume-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.resume-heading h1 { margin: 0; font-size: clamp(2.4rem, 6vw, 4.4rem); font-weight: 680; line-height: 1; letter-spacing: -.065em; }
+.resume-heading .primary-action { margin: 0; }
+.resume-document { border: 1px solid var(--line); border-radius: 12px; padding: clamp(10px, 3vw, 38px); background: var(--panel); }
+.resume-document img { display: block; width: 100%; height: auto; border: 1px solid var(--line); background: #fff; }

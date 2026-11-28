@@ -1,3 +1,5 @@
+import { skipsArcadeZoom, subscribeToArcadeMotion } from './arcade-motion-preference';
+
 const clamp = (value: number) => Math.min(1, Math.max(0, value));
 const ease = (value: number) => value * value * (3 - 2 * value);
 const signalDuration = 220;
@@ -30,6 +32,7 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
   let revealTimer = 0;
   let revealRun = 0;
   let scrollFrame = 0;
+  let pendingWorkArrival: (() => void) | null = null;
   let zoomingToWork = false;
   let homeReturn: { cancel: () => void; finish: () => void } | null = null;
   let swipe: { x: number; y: number; handled: boolean } | null = null;
@@ -53,6 +56,7 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
     camera.remove();
     delete projects.dataset.arcadeEntry;
     zoomingToWork = false;
+    pendingWorkArrival = null;
     bypass = false;
     workDocked = false;
     canLeaveWork = false;
@@ -135,7 +139,7 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
   };
 
   const returnHome = (complete: () => void, fromWork = false) => {
-    if (homeReturn || motion.matches) return null;
+    if (homeReturn || motion.matches || skipsArcadeZoom()) return null;
     const bounds = projects.getBoundingClientRect();
     const headerBottom = header.getBoundingClientRect().bottom;
     const distance = bounds.top - headerBottom;
@@ -192,7 +196,7 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
   };
 
   const start = (enterProjects: () => void, fromTop = false) => {
-    if (motion.matches) return false;
+    if (motion.matches || skipsArcadeZoom()) return false;
     homeReturn?.cancel();
     cancelScroll();
 
@@ -205,6 +209,7 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
     const distance = projects.getBoundingClientRect().top - header.getBoundingClientRect().bottom;
     if (distance <= 1) return false;
     zoomingToWork = true;
+    pendingWorkArrival = enterProjects;
     document.documentElement.dataset.arcadeScrollLocked = '';
     const startAt = performance.now();
 
@@ -217,6 +222,7 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
         scrollFrame = window.requestAnimationFrame(scroll);
       } else {
         scrollFrame = 0;
+        pendingWorkArrival = null;
         enterProjects();
         update();
       }
@@ -236,10 +242,21 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
     update();
   }
 
+  const unsubscribeArcadeMotion = subscribeToArcadeMotion(() => {
+    if (!skipsArcadeZoom()) return;
+    const arrive = pendingWorkArrival;
+    onMotionChange();
+    arrive?.();
+  });
+
   const autoScroll = (direction: number) => {
     if (zoomingToWork || homeReturn || lockedAt !== null || document.documentElement.hasAttribute('data-career-tv-locked')) return true;
 
-    const distance = projects.getBoundingClientRect().top - header.getBoundingClientRect().bottom;
+    const bounds = projects.getBoundingClientRect();
+    const distance = bounds.top - header.getBoundingClientRect().bottom;
+    const exitDistance = Math.max(distance, bounds.bottom - window.innerHeight);
+    if (direction > 0 && Math.abs(exitDistance) <= 2 && !bypass && !motion.matches && leaveWork()) return true;
+
     if (direction > 0 && distance > 1) {
       const enterWork = () => {
         projects.tabIndex = -1;
@@ -267,7 +284,8 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
   }
 
   function onTouchStart(event: TouchEvent) {
-    const carousel = event.target instanceof Element && event.target.closest('.arcade-feature, .arcade-project-grid');
+    const carousel = event.target instanceof Element
+      && event.target.closest('[data-carousel-scroll] :is(.arcade-feature, .arcade-project-grid)');
     const touch = event.touches.length === 1 ? event.touches[0] : null;
     swipe = touch && !carousel ? { x: touch.clientX, y: touch.clientY, handled: false } : null;
   }
@@ -362,6 +380,7 @@ export function connectArcadeScroll(leaveWork: () => boolean) {
       window.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('keydown', onKeyDown);
       motion.removeEventListener('change', onMotionChange);
+      unsubscribeArcadeMotion();
       homeReturn?.cancel();
       cancelScroll();
       reset();

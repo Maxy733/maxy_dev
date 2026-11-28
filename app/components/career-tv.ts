@@ -1,3 +1,4 @@
+import { skipsArcadeZoom, subscribeToArcadeMotion } from './arcade-motion-preference';
 import { typeTerminalText } from './terminal-text';
 
 function typeCareerText(career: HTMLElement, signal: AbortSignal) {
@@ -24,7 +25,27 @@ export function playCareerTv({ prepare, arrive, finish, reverse = false }: {
   const scene = document.querySelector('.hero .arcade-scene');
   const career = document.getElementById('career');
   const header = document.querySelector('.site-header');
-  if (motion.matches || !scene || !career || !header || typeof scene.animate !== 'function') return null;
+  if (motion.matches || !career) return null;
+
+  if (skipsArcadeZoom()) {
+    if (reverse) return null;
+    const events = new AbortController();
+    function cleanup() {
+      if (events.signal.aborted) return;
+      events.abort();
+      finish();
+    }
+
+    prepare();
+    career.dataset.tvEntry = 'settled';
+    const typing = typeCareerText(career, events.signal);
+    arrive();
+    motion.addEventListener('change', cleanup, { signal: events.signal });
+    void typing.then(cleanup);
+    return cleanup;
+  }
+
+  if (!scene || !header || typeof scene.animate !== 'function') return null;
 
   if (!reverse) {
     prepare();
@@ -84,6 +105,7 @@ export function playCareerTv({ prepare, arrive, finish, reverse = false }: {
     if (stopped) return;
     stopped = true;
     events.abort();
+    unsubscribeArcadeMotion();
     if (career?.dataset.tvEntry === 'playing') career.dataset.tvEntry = 'settled';
     releaseCamera();
     finish();
@@ -117,6 +139,9 @@ export function playCareerTv({ prepare, arrive, finish, reverse = false }: {
   }, { signal: events.signal });
   window.addEventListener('resize', () => { if (!arrived) skipMotion(); }, { signal: events.signal });
   motion.addEventListener('change', skipMotion, { signal: events.signal });
+  const unsubscribeArcadeMotion = subscribeToArcadeMotion(() => {
+    if (skipsArcadeZoom() && !arrived) skipMotion();
+  });
 
   const direction = reverse ? 'reverse' : 'normal';
   const zoomTiming: KeyframeAnimationOptions = { duration: 1230, easing: 'cubic-bezier(.36, 0, .24, 1)', direction };

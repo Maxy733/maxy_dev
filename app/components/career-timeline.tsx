@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type CSSProperties } from 'react';
+import { localizedPath, ui, type Locale } from '../locale';
 import { connectCareerKnight } from './career-knight';
 
 const milestones = [
@@ -34,7 +35,14 @@ const milestones = [
   },
 ];
 
-export function CareerTimeline() {
+const thaiMilestones = [
+  { label: 'พฤศจิกายน 2023', title: 'เริ่มเรียนวิทยาการคอมพิวเตอร์', detail: 'มหาวิทยาลัยอัสสัมชัญ' },
+  { label: 'โครงงานจบ 1', title: 'Libby Bot ระบบแนะนำหนังสือด้วย AI', detail: 'แนะนำหนังสือด้วย AI' },
+  { label: 'โครงงานจบ 2', detail: 'เอกสารรับรองดิจิทัล' },
+  { label: 'พฤศจิกายน 2026', title: 'สำเร็จการศึกษา วท.บ. สาขาวิทยาการคอมพิวเตอร์', detail: 'เกรดเฉลี่ย 3.66' },
+];
+
+export function CareerTimeline({ locale }: { locale: Locale }) {
   const frame = useRef<HTMLDivElement>(null);
   const knight = useRef<HTMLSpanElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -56,14 +64,14 @@ export function CareerTimeline() {
 
   return (
     <div className="career-map-frame" ref={frame}>
-      <ol className="career-map" role="list" aria-label="Career timeline">
-        {milestones.map(({ label, dateTime, title, detail, href, marker }, index) => (
+      <ol className="career-map" role="list" aria-label={ui[locale].careerTimeline}>
+        {milestones.map((milestone, index) => ({ ...milestone, ...(locale === "th" ? thaiMilestones[index] : undefined) })).map(({ label, dateTime, title, detail, href, marker }, index) => (
           <li className="career-stop" key={title} style={{ '--stop-order': index } as CSSProperties}
             onPointerEnter={() => visitStop(index)} onFocus={() => visitStop(index)}>
             <span className="career-marker" data-marker={marker} aria-hidden="true" />
             <div className="career-stop-copy">
               {dateTime ? <time dateTime={dateTime}>{label}</time> : <span>{label}</span>}
-              <h3>{href ? <a className="text-link" href={href}>{title}</a> : title}</h3>
+              <h3>{href ? <a className="text-link" href={localizedPath(href, locale)}>{title}</a> : title}</h3>
               <p>{detail}</p>
             </div>
           </li>

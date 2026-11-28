@@ -111,7 +111,7 @@ export function connectCareerKnight(map: HTMLElement, knight: HTMLElement, canva
     const target = trail.stops[destination];
     const remaining = target - distance;
     const elapsed = previousTime ? Math.min(now - previousTime, 48) : 0;
-    const step = elapsed * .64;
+    const step = elapsed * .384;
     if (Math.abs(remaining) <= step) {
       settle();
       return;
