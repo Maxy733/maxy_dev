@@ -176,6 +176,11 @@ html:is([data-arcade-scroll-locked], [data-career-tv-locked]) { overflow: hidden
   cursor: pointer;
 }
 
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Keep the control beside the screen and below the compact hero introduction. */
+  .arcade-screen-power { translate: -50% calc(-50% + var(--art-height) * .07); }
+}
+
 .arcade-screen-power > span {
   position: relative;
   width: 14px;

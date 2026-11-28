@@ -328,7 +328,8 @@ export function ArcadeHero({ children, projectsHref, careerHref, locale }: { chi
 
   useLayoutEffect(() => {
     const hero = heroRef.current;
-    if (!hero || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (!hero || motion.matches) return;
 
     const introKey = 'maxy.arcade-intro-seen';
     try {
@@ -337,26 +338,25 @@ export function ArcadeHero({ children, projectsHref, careerHref, locale }: { chi
       // The intro can still play if browser storage is unavailable.
     }
 
-    const playIntro = () => {
+    const visible = new Set<Element>();
+    const observer = new IntersectionObserver((entries) => {
+      for (const { target, intersectionRatio } of entries) {
+        const threshold = target === hero ? .6 : .01;
+        if (intersectionRatio >= threshold) visible.add(target);
+        else visible.delete(target);
+      }
+      if (motion.matches || !visible.has(hero) || visible.size < 2) return;
+
       hero.dataset.arcadeIntro = '';
+      observer.disconnect();
       try {
         localStorage.setItem(introKey, '1');
       } catch {
         // Storage is only used to remember the first visit.
       }
-    };
-
-    if (!window.location.hash && window.scrollY <= 1) {
-      playIntro();
-      return;
-    }
-
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.intersectionRatio < .6) return;
-      playIntro();
-      observer.disconnect();
-    }, { threshold: .6 });
+    }, { threshold: [.01, .6] });
     observer.observe(hero);
+    for (const hotspot of hero.querySelectorAll('.arcade-hotspot')) observer.observe(hotspot);
     return () => observer.disconnect();
   }, []);
 
