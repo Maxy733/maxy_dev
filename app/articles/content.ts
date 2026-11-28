@@ -14,7 +14,7 @@ type ArticleSection = {
   figures?: readonly ProjectImage[];
 };
 
-type Article = {
+export type Article = {
   slug: string;
   title: string;
   category: string;

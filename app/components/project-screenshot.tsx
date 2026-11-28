@@ -10,7 +10,16 @@ export function ProjectScreenshot({ screenshot, showCaption = false, eager = fal
 
   return (
     <figure className="project-screenshot" data-portrait={height > width || undefined}>
-      <Image src={src} width={width} height={height} alt={alt} loading={eager ? 'eager' : undefined} unoptimized />
+      {/* Dark Reader can rewrite Next.js's default inline color before React hydrates. */}
+      <Image
+        src={src}
+        width={width}
+        height={height}
+        alt={alt}
+        loading={eager ? 'eager' : undefined}
+        style={{ color: undefined }}
+        unoptimized
+      />
       {showCaption && <figcaption>{caption}</figcaption>}
     </figure>
   );

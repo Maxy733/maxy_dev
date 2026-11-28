@@ -20,7 +20,7 @@ export type Project = {
   screenshots?: readonly ProjectImage[];
   techStack?: readonly { name: string; src: string }[];
   techStackBadge?: Pick<ProjectImage, 'src' | 'alt' | 'width' | 'height'>;
-  study: Record<StudySection, string>;
+  study: Record<StudySection, string | readonly string[]>;
 };
 
 export const projects = [
@@ -330,7 +330,10 @@ export const projects = [
       Question: 'How can a load-balanced storefront stay available during simulated traffic spikes, and which changes help the team restore service after an outage?',
       Data: 'The team monitored its WooCommerce storefront over two rounds. Uptime Kuma and UptimeRobot tracked uptime and response times. SSL Labs and PageSpeed Insights provided HTTPS and performance baselines.',
       Approach: 'The team ran the storefront on six Amazon EC2 instances behind an Application Load Balancer. It reviewed TLS and caching, added AWS WAF and Wordfence for the second round, and corrected a load balancer target configuration after an early outage.',
-      Evidence: 'The reported 24-hour Uptime Kuma snapshots went from 0% uptime in Round 1 to 100% in Round 2. The Round 2 snapshot showed 93.57% rolling 30-day uptime and a 347 ms average response time over 24 hours. The HTTPS audit earned an A+ from SSL Labs.',
+      Evidence: [
+        'The simulated DDoS traffic never let up. In Round 1, the storefront couldn’t keep up with the flood of requests, and Uptime Kuma reported 0% uptime in its 24-hour snapshot.',
+        'In Round 2, an AWS Application Load Balancer spread the traffic across eight identical instances. The requests kept coming, and the storefront held at 100% uptime over the monitored 24 hours, with an average response time of 347 ms. The same snapshot showed 93.57% rolling 30-day uptime, and the HTTPS audit earned an A+ from SSL Labs.',
+      ],
       'What I contributed': 'Add my role in configuring, observing, or documenting the simulation.',
     },
   },

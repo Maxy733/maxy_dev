@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react';
+import { ui, type Locale } from '../locale';
 import '@fontsource/silkscreen/latin-700.css';
 
 type ArtworkBounds = readonly [x: number, y: number, width: number, height: number];
@@ -11,13 +12,22 @@ type ScreenLoop = {
   glass?: string;
   tilt?: number;
   mode?: 'projects' | 'flicker';
+  power?: { x: number; y: number; label: string };
 };
 
 const screenLoops: ScreenLoop[] = [
   { src: '/pixel-hero-platformer.gif', bounds: [84, 121, 108, 165], mode: 'projects' },
-  { src: '/arcade-meter.gif', bounds: [810, 498, 22, 35], glass: 'polygon(5% 0, 96% 20%, 96% 100%, 0 77%)', tilt: 17 },
-  { src: '/arcade-comet.gif', bounds: [862, 522, 35, 67], glass: 'polygon(2% 0, 97% 22%, 100% 100%, 7% 75%)', tilt: 24 },
-  { src: '/arcade-crt-flicker.gif', bounds: [1171, 470, 133, 67], glass: 'polygon(16% 0, 100% 11%, 69% 99%, 0 67%)', tilt: 8, mode: 'flicker' },
+  {
+    src: '/arcade-meter.gif', bounds: [810, 498, 22, 35], glass: 'polygon(5% 0, 96% 20%, 96% 100%, 0 77%)', tilt: 17,
+  },
+  {
+    src: '/arcade-comet.gif', bounds: [862, 522, 35, 67], glass: 'polygon(2% 0, 97% 22%, 100% 100%, 7% 75%)', tilt: 24,
+    power: { x: 898, y: 514, label: 'Comet screen power' },
+  },
+  {
+    src: '/arcade-crt-flicker.gif', bounds: [1171, 470, 133, 67], glass: 'polygon(16% 0, 100% 11%, 69% 99%, 0 67%)',
+    tilt: 8, mode: 'flicker',
+  },
 ];
 
 const soundWords = [
@@ -71,12 +81,13 @@ function ArcadeSoundEffects() {
       const visible = crop.getBoundingClientRect();
       if (visible.bottom > 0 && visible.top < window.innerHeight
         && getComputedStyle(effects).visibility === 'visible') {
+        const minSoundY = Math.max(visible.top, 0) + 36;
         const visibleScreens = soundScreens.map((machine) => ({
           machine,
           x: art.left + machine.x / 1280 * art.width,
           y: art.top + machine.y / 768 * art.height,
         })).filter(({ x, y }) => x >= visible.left && x <= visible.right
-          && y >= Math.max(visible.top, 0) + 36 && y < Math.min(visible.bottom, window.innerHeight));
+          && y >= minSoundY && y < Math.min(visible.bottom, window.innerHeight));
         const regularScreens = visibleScreens.filter(({ machine }) => !machine.narrowFallback);
         const screens = regularScreens.length >= 3 ? regularScreens : visibleScreens;
         if (screens.length !== rotation.length || screens.some(({ machine }, index) => machine !== rotation[index])) {
@@ -105,11 +116,12 @@ function ArcadeSoundEffects() {
           const word = screen.machine.projects && Math.random() < .5
             ? projectSoundWord : words.splice(Math.floor(Math.random() * words.length), 1)[0];
           const x = Math.min(visible.right - 54, Math.max(visible.left + 54, screen.x));
+          const y = word === projectSoundWord ? Math.max(minSoundY, screen.y - 18 / 768 * art.height) : screen.y;
           nextBursts.push({
             id: nextBurstId++,
             word,
             left: (x - art.left) / art.width * 100,
-            top: (screen.y - art.top) / art.height * 100,
+            top: (y - art.top) / art.height * 100,
             delay: index * stagger,
             pink: screen.machine.pink,
           });
@@ -161,8 +173,7 @@ function ArcadeSoundEffects() {
     window.addEventListener('pageshow', syncViewport);
     window.addEventListener('pagehide', pauseOnPageHide);
     motion.addEventListener('change', syncPlayback);
-    // Hydration can finish after pageshow when the tab opens or reloads.
-    if (document.readyState === 'complete') syncViewport();
+    syncViewport();
     return () => {
       window.clearTimeout(timer);
       observer.disconnect();
@@ -185,9 +196,13 @@ function ArcadeSoundEffects() {
   );
 }
 
+function artworkPoint(x: number, y: number) {
+  return { left: `${x / 1280 * 100}%`, top: `${y / 768 * 100}%` };
+}
+
 function artworkPlacement([x, y, width, height]: ArtworkBounds) {
   return {
-    left: `${x / 1280 * 100}%`, top: `${y / 768 * 100}%`,
+    ...artworkPoint(x, y),
     width: `${width / 1280 * 100}%`, height: `${height / 768 * 100}%`,
   };
 }
@@ -196,6 +211,59 @@ function artworkCrop([x, y, width, height]: ArtworkBounds) {
   const position = `${x / (1280 - width) * 100}% ${y / (768 - height) * 100}%`;
   const size = `${1280 / width * 100}% ${768 / height * 100}%`;
   return `${position} / ${size}`;
+}
+
+function ArcadeScreenLoop({ src, bounds, glass, tilt, mode, power }: ScreenLoop) {
+  const button = useRef<HTMLButtonElement>(null);
+  const [powerPhase, setPowerPhase] = useState<'on' | 'starting' | 'stopping' | 'off'>('on');
+  const [inCrop, setInCrop] = useState(false);
+  const powered = powerPhase === 'on' || powerPhase === 'starting';
+
+  useEffect(() => {
+    const control = button.current;
+    const crop = control?.closest('.arcade-layer');
+    if (!control || !crop) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setInCrop(entry.intersectionRatio >= .95);
+    }, { root: crop, threshold: .95 });
+    observer.observe(control);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <>
+      <div className="arcade-loop-screen" data-project-loop={mode === 'projects' || undefined}
+        data-crt-flicker={mode === 'flicker' || undefined} data-screen-off={!powered || undefined}
+        data-power-phase={power ? powerPhase : undefined} aria-hidden="true" style={{
+        ...artworkPlacement(bounds), clipPath: glass,
+        '--screen-gif': `url('${src}')`, '--screen-tilt': tilt && `${tilt}deg`,
+        '--screen-artwork-crop': mode === 'projects' ? artworkCrop(bounds) : undefined,
+      } as CSSProperties}>
+        {powerPhase !== 'off' && (
+          <span onAnimationEnd={power && ((event) => {
+            if (event.target !== event.currentTarget) return;
+            if (powerPhase === 'starting' && event.animationName === 'arcade-screen-power-on') setPowerPhase('on');
+            if (powerPhase === 'stopping' && event.animationName === 'arcade-screen-power-off') setPowerPhase('off');
+          })}>{mode === 'projects' && <i />}</span>
+        )}
+      </div>
+      {power && (
+        <button
+          ref={button}
+          className="arcade-screen-power"
+          type="button"
+          aria-label={power.label}
+          aria-pressed={powered}
+          data-in-crop={inCrop || undefined}
+          style={artworkPoint(power.x, power.y)}
+          onClick={() => setPowerPhase(powered ? 'stopping' : 'starting')}
+        >
+          <span aria-hidden="true" />
+        </button>
+      )}
+    </>
+  );
 }
 
 const cabinetOutline = `M 5 121 Q 5 117 11 115 L 81 102 Q 85 100 91 104 L 198 163 Q 202 165 202 170
@@ -255,7 +323,7 @@ function ArcadeHotspot({ kind, bounds, outline, href, label, zoom }: {
   );
 }
 
-export function ArcadeHero({ children, projectsHref, careerHref }: { children: ReactNode; projectsHref: string; careerHref: string }) {
+export function ArcadeHero({ children, projectsHref, careerHref, locale }: { children: ReactNode; projectsHref: string; careerHref: string; locale: Locale }) {
   const heroRef = useRef<HTMLElement>(null);
 
   useLayoutEffect(() => {
@@ -309,30 +377,21 @@ export function ArcadeHero({ children, projectsHref, careerHref }: { children: R
   }
 
   return (
-    <section ref={heroRef} className="hero text-center" aria-labelledby="hero-title" data-arcade-inactive="">
+    <section ref={heroRef} className="hero text-center" aria-labelledby="hero-title">
       <div className="shell hero-content">{children}</div>
       <div className="arcade-layer" onPointerOver={followPointer} onPointerMove={followPointer}
         onPointerLeave={(event) => { delete event.currentTarget.dataset.pointerHint; }}>
         <div className="arcade-scene">
-          {screenLoops.map(({ src, bounds, glass, tilt, mode }) => (
-            <div className="arcade-loop-screen" data-project-loop={mode === 'projects' || undefined}
-              data-crt-flicker={mode === 'flicker' || undefined} key={src} aria-hidden="true" style={{
-              ...artworkPlacement(bounds), clipPath: glass,
-              '--screen-gif': `url('${src}')`, '--screen-tilt': tilt && `${tilt}deg`,
-              '--screen-artwork-crop': mode === 'projects' ? artworkCrop(bounds) : undefined,
-            } as CSSProperties}>
-              <span>{mode === 'projects' && <i />}</span>
-            </div>
-          ))}
-          <ArcadeHotspot kind="cabinet" bounds={[0, 101, 310, 667]} outline={cabinetOutline} href={projectsHref} label="Browse projects via the left arcade cabinet" zoom />
-          <ArcadeHotspot kind="tv" bounds={[934, 79, 266, 175]} outline={tvOutline} href={careerHref} label="Explore my career via the top-right TV" />
+          {screenLoops.map((screen) => <ArcadeScreenLoop key={screen.src} {...screen} power={screen.power && { ...screen.power, label: ui[locale].power }} />)}
+          <ArcadeHotspot kind="cabinet" bounds={[0, 101, 310, 667]} outline={cabinetOutline} href={projectsHref} label={ui[locale].gameWork} zoom />
+          <ArcadeHotspot kind="tv" bounds={[934, 79, 266, 175]} outline={tvOutline} href={careerHref} label={ui[locale].gameCareer} />
           <div className="arcade-light-sparks" style={artworkPlacement([683, 169, 46, 58])} aria-hidden="true">
             <i /><i />
           </div>
           <ArcadeSoundEffects />
         </div>
-        <span className="arcade-hotspot-hint arcade-projects-hint" aria-hidden="true">Projects</span>
-        <span className="arcade-hotspot-hint arcade-timeline-hint" aria-hidden="true">Timeline</span>
+        <span className="arcade-hotspot-hint arcade-projects-hint" aria-hidden="true">{ui[locale].projects}</span>
+        <span className="arcade-hotspot-hint arcade-timeline-hint" aria-hidden="true">{ui[locale].timeline}</span>
       </div>
     </section>
   );

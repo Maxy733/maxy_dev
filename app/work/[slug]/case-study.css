@@ -1,0 +1,69 @@
+.case-page { padding-block: 22px 110px; }
+.case-header { padding-bottom: 35px; }
+.case-header h1 { margin: 0; font-size: clamp(2.8rem, 5vw, 4.5rem); font-weight: 680; line-height: .99; letter-spacing: -.07em; text-wrap: balance; }
+.case-description { margin: 24px 0 0; color: var(--muted); font-size: 18px; line-height: 1.65; }
+.case-tech-stack { margin-top: 24px; }
+.case-tech-stack h2 { margin: 0 0 10px; font-size: 1.5rem; font-weight: 650; }
+.case-tech-stack ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
+.case-tech-stack li {
+  position: relative;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+}
+.case-tech-stack-tooltip {
+  position: absolute;
+  z-index: 1;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  translate: -50% 0;
+  visibility: hidden;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 4px 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.case-tech-stack li:is(:hover, :focus-visible) .case-tech-stack-tooltip { visibility: visible; }
+.case-tech-stack-badge { width: 112px; height: auto; margin-top: 14px; }
+.case-copy { padding-bottom: 34px; }
+.case-copy h2 { font-size: clamp(1.7rem, 3vw, 2.35rem); }
+.case-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  align-items: start;
+  column-gap: clamp(28px, 5vw, 72px);
+  margin-top: 42px;
+}
+.case-overview > .case-visual { grid-column: 1 / -1; width: 100%; }
+.case-overview-list {
+  display: grid;
+  max-width: 65ch;
+  gap: 12px;
+  margin: 12px 0 0;
+  padding-inline-start: 1.3rem;
+  color: var(--muted);
+  line-height: 1.65;
+  list-style: disc;
+}
+.case-overview-list li::marker { color: var(--cyan); }
+.case-overview-list strong { margin-inline-end: .35em; color: var(--ink); }
+.case-overview-list p + p { margin-block-start: .75em; }
+.case-visual { margin: 0 auto 35px; }
+.case-visual .data-visual { min-height: 290px; border: 1px solid var(--line); border-radius: 12px; }
+.case-visual .project-screenshot[data-portrait] { width: fit-content; max-width: 100%; margin-inline: auto; }
+.case-visual .project-screenshot[data-portrait] img { width: auto; max-height: min(70svh, 680px); margin-inline: auto; }
+.case-visual .project-screenshot[data-portrait] figcaption { max-width: 60ch; margin-inline: auto; text-align: center; }
+
+@media (max-width: 840px) {
+  .case-overview { grid-template-columns: minmax(0, 1fr); }
+  .case-copy { border-top: 1px solid var(--line); padding-top: 27px; }
+}

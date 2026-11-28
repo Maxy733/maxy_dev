@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-export function ArticleBackToTop() {
+export function ArticleBackToTop({ label }: { label: string }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -29,9 +29,9 @@ export function ArticleBackToTop() {
 
   return (
     <div className="article-back-top-float">
-      <a className="primary-action article-back-top" href="#main" aria-label="Back to top">
+      <a className="primary-action article-back-top" href="#main" aria-label={label}>
         <span aria-hidden="true">↑</span>
-        <span className="article-back-top-label">Back to top</span>
+        <span className="article-back-top-label">{label}</span>
       </a>
     </div>
   );

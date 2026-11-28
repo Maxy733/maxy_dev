@@ -1,8 +1,10 @@
 'use client';
 
+import { localizedPath, type Locale } from '../locale';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { connectArcadeScroll } from './arcade-zoom';
+import { skipsArcadeZoom } from './arcade-motion-preference';
 import { playCareerTv } from './career-tv';
 import { caseStudyTransitionType } from './case-study-match';
 import { getCaseStudyReturn, setCaseStudyReturn } from './case-study-return';
@@ -34,7 +36,7 @@ function isLowerHomeSectionActive() {
   });
 }
 
-function scrollToSection(id: string, behavior: ScrollBehavior = 'auto') {
+function scrollToSection(id: string, behavior: ScrollBehavior = 'auto', preserveHash = false) {
   const section = document.getElementById(id);
   if (!section) return false;
 
@@ -43,12 +45,13 @@ function scrollToSection(id: string, behavior: ScrollBehavior = 'auto') {
   section.scrollIntoView({ behavior, block: 'start' });
 
   const { pathname, search, hash } = window.location;
-  if (hash) window.history.replaceState(window.history.state, '', pathname + search);
+  if (hash && !preserveHash) window.history.replaceState(window.history.state, '', pathname + search);
 
   return true;
 }
 
-export function SectionNavigation() {
+export function SectionNavigation({ locale }: { locale: Locale }) {
+  const home = localizedPath('/', locale);
   const pathname = usePathname();
   const router = useRouter();
   const pendingSection = useRef<{ id: string; transition: SectionTransition } | null>(null);
@@ -129,19 +132,19 @@ export function SectionNavigation() {
   }, [startCareer, startWork]);
 
   useLayoutEffect(() => {
-    if (pathname === '/' && getCaseStudyReturn()) scrollToSection('projects', 'instant');
-  }, [pathname]);
+    if (pathname === home && getCaseStudyReturn()) scrollToSection('projects', 'instant');
+  }, [home, pathname]);
 
   useEffect(() => {
     function scrollToFragment() {
       const id = window.location.hash.slice(1);
-      if (id) scrollToSection(id, 'instant');
+      if (id) scrollToSection(id, 'instant', true);
     }
 
     const pending = pendingSection.current;
-    if (pathname === '/' && getCaseStudyReturn()) {
+    if (pathname === home && getCaseStudyReturn()) {
       setCaseStudyReturn(null);
-    } else if (pathname === '/' && pending) {
+    } else if (pathname === home && pending) {
       if (pending.id === 'career' && !pending.transition) {
         const career = document.getElementById('career');
         if (career) career.dataset.tvEntry = 'settled';
@@ -153,11 +156,14 @@ export function SectionNavigation() {
 
     window.addEventListener('hashchange', scrollToFragment);
     return () => window.removeEventListener('hashchange', scrollToFragment);
-  }, [pathname]);
+  }, [home, pathname]);
 
   useEffect(() => {
-    if (pathname !== '/') return;
-    const controller = connectArcadeScroll(() => !sectionAnimation.current && startAfterHome('career', true));
+    if (pathname !== home) return;
+    const controller = connectArcadeScroll(() => {
+      if (sectionAnimation.current) return false;
+      return skipsArcadeZoom() ? startCareer() : startAfterHome('career', true);
+    });
     arcadeScroll.current = controller;
     const pending = pendingSection.current;
     if (pending?.transition) {
@@ -175,7 +181,7 @@ export function SectionNavigation() {
       controller?.disconnect();
       arcadeScroll.current = null;
     };
-  }, [pathname, startAfterHome, startCareer]);
+  }, [home, pathname, startAfterHome, startCareer]);
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {
@@ -190,7 +196,7 @@ export function SectionNavigation() {
       const transition: SectionTransition = section === 'projects' && link.hasAttribute('data-arcade-zoom') ? 'projects'
         : section === 'career' && link.hasAttribute('data-career-tv') ? 'career' : null;
       const samePage = url.origin === window.location.origin && url.pathname === window.location.pathname;
-      if (samePage && url.pathname === '/' && link.hasAttribute('data-arcade-home')) {
+      if (samePage && url.pathname === home && link.hasAttribute('data-arcade-home')) {
         event.preventDefault();
         startHome();
         return;
@@ -231,8 +237,8 @@ export function SectionNavigation() {
         }
         if (section !== 'projects' && (section !== 'main' || window.scrollY > 0)) arcadeScroll.current?.skip();
         const zoomed = transition === 'projects' && arcadeScroll.current?.start(() => scrollToSection(section, 'instant'));
-        if (zoomed || scrollToSection(section)) event.preventDefault();
-      } else if (url.pathname === '/' && homeSections.has(section)) {
+        if (zoomed || scrollToSection(section, transition && skipsArcadeZoom() ? 'instant' : 'auto')) event.preventDefault();
+      } else if (url.pathname === home && homeSections.has(section)) {
         event.preventDefault();
         const project = link.dataset.caseStudyProject;
         const fromCareer = !!project && new URLSearchParams(window.location.search).get('from') === 'career';
@@ -249,7 +255,7 @@ export function SectionNavigation() {
     // Handle section links before Next.js writes a fragment to the address bar.
     document.addEventListener('click', handleClick, true);
     return () => document.removeEventListener('click', handleClick, true);
-  }, [router, startAfterHome, startCareer, startHome, startWork]);
+  }, [home, router, startAfterHome, startCareer, startHome, startWork]);
 
   return null;
 }

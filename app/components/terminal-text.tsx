@@ -10,11 +10,13 @@ export function TerminalText({ text, part }: { text: string; part?: string }) {
 type TerminalLine = { line: HTMLElement | null; interval: number; delay?: number };
 
 export function typeTerminalText(entries: TerminalLine[], signal: AbortSignal, leadIn = 150) {
+  const segmenter = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
   const lines = entries.flatMap(({ line, interval, delay = 0 }) => {
     const source = line?.querySelector('.career-terminal-source')?.textContent;
     const output = line?.querySelector<HTMLElement>('.career-terminal-output');
     if (!line || !source || !output) return [];
-    return [{ line, output, letters: Array.from(source), interval, delay, count: -1 }];
+    const letters = segmenter ? Array.from(segmenter.segment(source), ({ segment }) => segment) : Array.from(source);
+    return [{ line, output, letters, interval, delay, count: -1 }];
   });
   if (signal.aborted || !lines.length) return Promise.resolve();
 

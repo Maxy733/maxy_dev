@@ -1,15 +1,11 @@
+import { ui, type Locale } from '../locale';
 import type { Project } from '../projects';
 import { ProjectPreviewWindow } from './project-preview-window';
 
-const labels = {
-  screenshot: 'Screenshot to be added',
-  chart: 'Original chart to be added',
-  result: 'Original result to be added',
-};
-
-export function ProjectPlaceholder({ visual, title }: {
+export function ProjectPlaceholder({ visual, title, locale }: {
   visual: NonNullable<Project['visual']>;
   title: string;
+  locale: Locale;
 }) {
   if (visual === 'screenshot') {
     return (
@@ -18,11 +14,11 @@ export function ProjectPlaceholder({ visual, title }: {
           <div className="preview-canvas">
             <div className="placeholder-caption" aria-hidden="true">
               <span className="image-symbol" />
-              <span>{labels[visual]}</span>
+              <span>{ui[locale][visual]}</span>
             </div>
           </div>
         </ProjectPreviewWindow>
-        <figcaption className="sr-only">{labels[visual]}</figcaption>
+        <figcaption className="sr-only">{ui[locale][visual]}</figcaption>
       </figure>
     );
   }
@@ -38,7 +34,7 @@ export function ProjectPlaceholder({ visual, title }: {
           </div>
         )}
       </div>
-      <figcaption>{labels[visual]}</figcaption>
+      <figcaption>{ui[locale][visual]}</figcaption>
     </figure>
   );
 }
